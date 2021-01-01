@@ -1,4 +1,4 @@
-# cat_vs_dog
+# pyple
 
 A Gender classification flutter application after identifying the presence of a person in the submitted photo.
 
