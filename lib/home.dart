@@ -208,7 +208,6 @@ import 'dart:io';
 import 'package:tflite/tflite.dart';
 import 'package:image_picker/image_picker.dart';
 
-List _modelList = [9396, 9690, 9329];
 List _possibleOutputs = ['Man', 'None', 'Woman'];
 
 class Home extends StatefulWidget {
@@ -221,25 +220,164 @@ class _HomeState extends State<Home> {
   File _image;
   List _output;
   final picker = ImagePicker();
-  int _selectedValue = 9396;
 
-  classifyImage(File image) async {
-    var output = await Tflite.runModelOnImage(
-      path: image.path,
-      numResults: 2,
-      threshold: 0.5,
-      imageMean: 0.5 * (_selectedValue != 9690 ? 1 : 255.0),
-      imageStd: 0.5 * (_selectedValue != 9690 ? 1 : 255.0),
-    );
-    setState(() {
-      _output = output;
-      _loading = false;
-    });
+  classifyImage(File image) {
+    loadModel(9690).then((_){
+          Tflite.runModelOnImage(
+            path: image.path,
+            numResults: 2,
+            threshold: 0.5,
+            imageMean: 127.5,
+            imageStd: 127.5,
+          ).then((firstOutput) {
+            if (firstOutput[0]['index'] == 0) {
+              loadModel(9400).then((_) {
+                Tflite.runModelOnImage(
+                  path: image.path,
+                  numResults: 2,
+                  threshold: 0.5,
+                  imageMean: 0.5,
+                  imageStd: 0.5,
+                ).then((secondOutput) {
+                  if (secondOutput[0]['index'] == 2 || secondOutput[0]['index'] == 1) {
+                    setState(() {
+                      _output = firstOutput;
+                      _loading = false;
+                    });
+                  } else {
+                    setState(() {
+                      _output = firstOutput[0]['confidence'] >
+                          secondOutput[0]['confidence']
+                          ? firstOutput
+                          : secondOutput;
+                      _loading = false;
+                    });
+                  }
+                }).catchError((_) {
+                  setState(() {
+                    _output = firstOutput;
+                    _loading = false;
+                  });
+                });
+              });
+            } else if (firstOutput[0]['index'] == 2) {
+              loadModel(9400).then((_) {
+                Tflite.runModelOnImage(
+                  path: image.path,
+                  numResults: 2,
+                  threshold: 0.5,
+                  imageMean: 0.5,
+                  imageStd: 0.5,
+                ).then((secondOutput) {
+                  if (secondOutput[0]['index'] == 0) {
+                    loadModel(9396).then((_) {
+                      Tflite.runModelOnImage(
+                        path: image.path,
+                        numResults: 2,
+                        threshold: 0.5,
+                        imageMean: 0.5,
+                        imageStd: 0.5,
+                      ).then((thirdOutput) {
+                        if (thirdOutput[0]['index'] == 0) {
+                          setState(() {
+                            _output = secondOutput;
+                            _loading = false;
+                          });
+                        }
+                      }).catchError((_) {
+                        setState(() {
+                          _output = firstOutput;
+                          _loading = false;
+                        });
+                      });
+                      setState(() {
+                        _output = firstOutput[0]['confidence'] >
+                                secondOutput[0]['confidence']
+                            ? firstOutput
+                            : secondOutput;
+                        _loading = false;
+                      });
+                    });
+                  } else {
+                    setState(() {
+                      _output = firstOutput[0]['confidence'] >
+                              secondOutput[0]['confidence']
+                          ? firstOutput
+                          : secondOutput;
+                      _loading = false;
+                    });
+                  }
+                }).catchError((_) {
+                  setState(() {
+                    _output = firstOutput;
+                    _loading = false;
+                  });
+                });
+              });
+            } else {
+              loadModel(9400).then((_) {
+                Tflite.runModelOnImage(
+                  path: image.path,
+                  numResults: 2,
+                  threshold: 0.5,
+                  imageMean: 0.5,
+                  imageStd: 0.5,
+                ).then((secondOutput) {
+                  setState(() {
+                    _output = firstOutput[0]['confidence'] >
+                            secondOutput[0]['confidence']
+                        ? firstOutput
+                        : secondOutput;
+                    _loading = false;
+                  });
+                }).catchError((_) {
+                  setState(() {
+                    _output = firstOutput;
+                    _loading = false;
+                  });
+                });
+              });
+            }
+          }).catchError((_) {
+            loadModel(9400).then((_) {
+              Tflite.runModelOnImage(
+                path: image.path,
+                numResults: 2,
+                threshold: 0.5,
+                imageMean: 0.5,
+                imageStd: 0.5,
+              ).then((secondOutput) {
+                setState(() {
+                  _output = secondOutput;
+                  _loading = false;
+                });
+              }).catchError((_) {
+                loadModel(9396).then((_) {
+                  Tflite.runModelOnImage(
+                    path: image.path,
+                    numResults: 2,
+                    threshold: 0.5,
+                    imageMean: 0.5,
+                    imageStd: 0.5,
+                  ).then((thirdOutput) {
+                    setState(() {
+                      _output = thirdOutput;
+                      _loading = false;
+                    });
+                  }).catchError(() {
+                    // error on all models..
+                  });
+                });
+              });
+            });
+          });
+        });
   }
 
-  loadModel() async {
+  loadModel(selectedValue) async {
     await Tflite.loadModel(
-      model: 'assets/model_MobileNetV2_v$_selectedValue.tflite', // Todo: change the model here
+      model: 'assets/model_MobileNetV2_v$selectedValue.tflite',
+      // Todo: change the model here
       labels: 'assets/labels_3.txt',
     );
   }
@@ -251,15 +389,6 @@ class _HomeState extends State<Home> {
       _image = File(image.path);
     });
     classifyImage(_image);
-  }
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    loadModel().then((value) {
-      setState(() {});
-    });
   }
 
   @override
@@ -278,7 +407,7 @@ class _HomeState extends State<Home> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: <Widget>[
-            SizedBox(height: 30),
+            SizedBox(height: 50),
             Text(
               'Classify Men & Women',
               style: TextStyle(
@@ -292,55 +421,58 @@ class _HomeState extends State<Home> {
             Center(
               child: (_loading
                   ? Container(
-                width: 280,
-                child: Column(
-                  children: <Widget>[
-                    Image.asset('assets/men_vs_women.png'),
-                    SizedBox(
-                      height: 85,
+                      width: 280,
+                      child: Column(
+                        children: <Widget>[
+                          Image.asset('assets/men_vs_women.png'),
+                          SizedBox(
+                            height: 85,
+                          )
+                        ],
+                      ),
                     )
-                  ],
-                ),
-              )
                   : Container(
-                child: Column(
-                  children: <Widget>[
-                    Container(height: 250, child: Image.file(_image)),
-                    SizedBox(height: 10),
-                    _output != null
-                        ? Column(
-                          children: [
-                            Text('Identified Gender: ${_possibleOutputs[_output[0]['index']]}',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                            )),
-                            SizedBox(height: 10),
-                            Text('Confidence Level: ${(_output[0]['confidence']*100).toString().substring(0,5)}%',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                )),
-                            SizedBox(height: 10),
-                          ],
-                        )
-
-                        : Container(),
-                  ],
-                ),
-              )),
+                      child: Column(
+                        children: <Widget>[
+                          Container(height: 250, child: Image.file(_image)),
+                          SizedBox(height: 10),
+                          _output != null
+                              ? Column(
+                                  children: [
+                                    Text(
+                                        'Identified Gender: ${_possibleOutputs[_output[0]['index']]}',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 20,
+                                        )),
+                                    SizedBox(height: 10),
+                                    Text(
+                                        'Confidence Level: ${(_output[0]['confidence'] * 100).toString().substring(0, 5)}%',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 20,
+                                        )),
+                                    SizedBox(height: 10),
+                                  ],
+                                )
+                              : Container(),
+                        ],
+                      ),
+                    )),
             ),
             Container(
               width: MediaQuery.of(context).size.width,
               child: Column(
                 children: <Widget>[
                   GestureDetector(
-                    onTap: () {pickImage('camera');},
+                    onTap: () {
+                      pickImage('camera');
+                    },
                     child: Container(
                       width: MediaQuery.of(context).size.width - 160,
                       alignment: Alignment.center,
                       padding:
-                      EdgeInsets.symmetric(horizontal: 24, vertical: 17),
+                          EdgeInsets.symmetric(horizontal: 24, vertical: 17),
                       decoration: BoxDecoration(
                           color: Color(0xFFEE99600),
                           borderRadius: BorderRadius.circular(6)),
@@ -354,12 +486,14 @@ class _HomeState extends State<Home> {
                     height: 10,
                   ),
                   GestureDetector(
-                    onTap: () {pickImage('gallery');},
+                    onTap: () {
+                      pickImage('gallery');
+                    },
                     child: Container(
                       width: MediaQuery.of(context).size.width - 160,
                       alignment: Alignment.center,
                       padding:
-                      EdgeInsets.symmetric(horizontal: 24, vertical: 17),
+                          EdgeInsets.symmetric(horizontal: 24, vertical: 17),
                       decoration: BoxDecoration(
                           color: Color(0xFFEE99600),
                           borderRadius: BorderRadius.circular(6)),
@@ -368,30 +502,6 @@ class _HomeState extends State<Home> {
                         style: TextStyle(color: Colors.white),
                       ),
                     ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: _modelList
-                        .map(
-                          (e) => ListTile(
-                        title: Text('Model 0.'+e.toString(), style: TextStyle(color: Colors.white)),
-                        leading: Radio(
-                          value: e,
-                          groupValue: _selectedValue,
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedValue = value;
-                            });
-                            loadModel();
-                            if (_image != null) {
-                              classifyImage(_image);
-                            }
-                          },
-                          activeColor: Color(0xFFE99600),
-                        ),
-                      ),
-                    )
-                        .toList(),
                   ),
                 ],
               ),
@@ -402,37 +512,3 @@ class _HomeState extends State<Home> {
     );
   }
 }
-
-enum Model { lafayette, jefferson }
-
-class RadioButtonsList extends StatefulWidget {
-  @override
-  _RadioButtonsListState createState() => _RadioButtonsListState();
-}
-
-class _RadioButtonsListState extends State<RadioButtonsList> {
-  Model _character = Model.lafayette;
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: <Widget>[
-        RadioListTile<Model>(
-          title: const Text('Lafayette'),
-          value: Model.lafayette,
-          groupValue: _character,
-          onChanged: (Model value) { setState(() { _character = value; }); },
-        ),
-        RadioListTile<Model>(
-          title: const Text('Thomas Jefferson'),
-          value: Model.jefferson,
-          groupValue: _character,
-          onChanged: (Model value) { setState(() { _character = value; }); },
-        ),
-      ],
-    );
-  }
-}
-
-
-
