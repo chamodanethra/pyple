@@ -14,7 +14,7 @@ class _MySplashState extends State<MySplash> {
       seconds: 2,
       navigateAfterSeconds: Home(),
       title: Text(
-        'pyPle',
+        'Pyple',
         style: TextStyle(
           fontWeight: FontWeight.bold,
           fontSize: 30,
