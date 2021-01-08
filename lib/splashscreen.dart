@@ -21,9 +21,9 @@ class _MySplashState extends State<MySplash> {
         'Pyple',
         style: TextStyle(
           fontWeight: FontWeight.bold,
-          fontSize: 30,
+          fontSize: 60,
           color: Color(
-            0xFFE99600,
+            0xFFA81C1C,
           ),
         ),
       ),
@@ -31,16 +31,15 @@ class _MySplashState extends State<MySplash> {
         'Convolutional Neural Network by Chamoda Nethra Nanayakkara',
         style: TextStyle(
           fontWeight: FontWeight.bold,
-          fontSize: 10,
+          fontSize: 12,
           color: Color(
-            0xFFE99600,
+            0xFFA81C1C,
           ),
         ),
       ),
-      image: Image.asset('assets/gender.jpeg'),
-      backgroundColor: Colors.black,
+      backgroundColor: Color(0xFFFDD624),
       photoSize: 75,
-      loaderColor: Color(0xFFEEDA28),
+      loaderColor: Color(0xFFA81C1C),
     );
   }
 }
