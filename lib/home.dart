@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
 import 'dart:io';
-
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:tflite/tflite.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -192,6 +192,9 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
     return Scaffold(
       backgroundColor: Color(0xFF101010),
       body: Container(
