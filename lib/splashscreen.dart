@@ -28,7 +28,7 @@ class _MySplashState extends State<MySplash> {
         ),
       ),
       loadingText: Text(
-        'Convolutional Neural Network by Chamoda Nethra Nanayakkara',
+        'CNN by CNN',
         style: TextStyle(
           fontWeight: FontWeight.bold,
           fontSize: 12,
